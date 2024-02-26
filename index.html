@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Tracker</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    .container {
+        max-width: 400px;
+        margin: 50px auto;
+        text-align: center;
+    }
+    input[type="text"], button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Attendance Tracker</h2>
+    <input type="text" id="employeeNumber" placeholder="Enter employee number">
+    <p id="status"></p>
+    <button id="clockInBtn" onclick="clockIn()">Clock In</button>
+    <button id="clockOutBtn" onclick="clockOut()" disabled>Clock Out</button>
+</div>
+
+<script>
+    var employeeNumber;
+    var clockInTime;
+    var clockOutTime;
+
+    function clockIn() {
+        employeeNumber = document.getElementById("employeeNumber").value;
+        clockInTime = new Date();
+        document.getElementById("status").innerText = "Employee #" + employeeNumber + ", you have clocked in at " + formatTime(clockInTime);
+        document.getElementById("clockInBtn").disabled = true;
+        document.getElementById("clockOutBtn").disabled = false;
+    }
+
+    function clockOut() {
+        clockOutTime = new Date();
+        document.getElementById("status").innerText = "Employee #" + employeeNumber + ", you have clocked out at " + formatTime(clockOutTime);
+        document.getElementById("clockInBtn").disabled = false;
+        document.getElementById("clockOutBtn").disabled = true;
+        calculateHours();
+    }
+
+    function formatTime(time) {
+        return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function calculateHours() {
+        var hoursWorked = (clockOutTime - clockInTime) / (1000 * 60 * 60);
+        alert("Employee #" + employeeNumber + ", you worked for " + hoursWorked.toFixed(2) + " hours.");
+    }
+</script>
+</body>
+</html>

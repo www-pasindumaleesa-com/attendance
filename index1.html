@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Tracker</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    .container {
+        max-width: 400px;
+        margin: 50px auto;
+        text-align: center;
+    }
+    input[type="text"], button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Attendance Tracker</h2>
+    <input type="text" id="employeeNumber" placeholder="Enter employee number">
+    <p id="status"></p>
+    <button id="clockInBtn" onclick="clockIn()">Clock In</button>
+    <button id="clockOutBtn" onclick="clockOut()" disabled>Clock Out</button>
+</div>
+
+<script>
+    var employeeNumber;
+    var clockInTime;
+    var clockOutTime;
+    var entryLocation;
+    var leavingLocation;
+
+    function clockIn() {
+        employeeNumber = document.getElementById("employeeNumber").value;
+        clockInTime = new Date();
+        getLocation((position) => {
+            entryLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            saveDataToDatabase(employeeNumber, clockInTime, entryLocation, null, null);
+        });
+    }
+
+    function clockOut() {
+        clockOutTime = new Date();
+        getLocation((position) => {
+            leavingLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            updateDataInDatabase(employeeNumber, clockOutTime, leavingLocation);
+        });
+    }
+
+    function saveDataToDatabase(employeeNumber, clockTime, entryLocation, leavingTime, leavingLocation) {
+        fetch('/save-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                employeeNumber: employeeNumber,
+                clockTime: clockTime,
+                entryLatitude: entryLocation.latitude,
+                entryLongitude: entryLocation.longitude,
+                leavingTime: leavingTime,
+                leavingLatitude: leavingLocation ? leavingLocation.latitude : null,
+                leavingLongitude: leavingLocation ? leavingLocation.longitude : null
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Successfully added to the database');
+                alert('Successfully added to the database');
+            } else {
+                response.text().then(errorMessage => {
+                    console.error('Error adding to the database:', errorMessage);
+                    alert('Error adding to the database: ' + errorMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error:', error);
+        });
+    }
+
+    function updateDataInDatabase(employeeNumber, clockOutTime, leavingLocation) {
+        fetch('/update-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                employeeNumber: employeeNumber,
+                clockOutTime: clockOutTime,
+                leavingLatitude: leavingLocation.latitude,
+                leavingLongitude: leavingLocation.longitude
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Successfully updated in the database');
+                alert('Successfully updated in the database');
+            } else {
+                response.text().then(errorMessage => {
+                    console.error('Error updating in the database:', errorMessage);
+                    alert('Error updating in the database: ' + errorMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error:', error);
+        });
+    }
+
+    function getLocation(callback) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(callback);
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+</script>
+</body>
+</html>
