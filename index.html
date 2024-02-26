@@ -33,30 +33,101 @@
     var employeeNumber;
     var clockInTime;
     var clockOutTime;
+    var entryLocation;
+    var leavingLocation;
 
     function clockIn() {
         employeeNumber = document.getElementById("employeeNumber").value;
         clockInTime = new Date();
-        document.getElementById("status").innerText = "Employee #" + employeeNumber + ", you have clocked in at " + formatTime(clockInTime);
-        document.getElementById("clockInBtn").disabled = true;
-        document.getElementById("clockOutBtn").disabled = false;
+        getLocation((position) => {
+            entryLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            saveDataToDatabase(employeeNumber, clockInTime, entryLocation, null, null);
+        });
     }
 
     function clockOut() {
         clockOutTime = new Date();
-        document.getElementById("status").innerText = "Employee #" + employeeNumber + ", you have clocked out at " + formatTime(clockOutTime);
-        document.getElementById("clockInBtn").disabled = false;
-        document.getElementById("clockOutBtn").disabled = true;
-        calculateHours();
+        getLocation((position) => {
+            leavingLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            updateDataInDatabase(employeeNumber, clockOutTime, leavingLocation);
+        });
     }
 
-    function formatTime(time) {
-        return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    function saveDataToDatabase(employeeNumber, clockTime, entryLocation, leavingTime, leavingLocation) {
+        fetch('/save-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                employeeNumber: employeeNumber,
+                clockTime: clockTime,
+                entryLatitude: entryLocation.latitude,
+                entryLongitude: entryLocation.longitude,
+                leavingTime: leavingTime,
+                leavingLatitude: leavingLocation ? leavingLocation.latitude : null,
+                leavingLongitude: leavingLocation ? leavingLocation.longitude : null
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Successfully added to the database');
+                alert('Successfully added to the database');
+            } else {
+                response.text().then(errorMessage => {
+                    console.error('Error adding to the database:', errorMessage);
+                    alert('Error adding to the database: ' + errorMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error:', error);
+        });
     }
 
-    function calculateHours() {
-        var hoursWorked = (clockOutTime - clockInTime) / (1000 * 60 * 60);
-        alert("Employee #" + employeeNumber + ", you worked for " + hoursWorked.toFixed(2) + " hours.");
+    function updateDataInDatabase(employeeNumber, clockOutTime, leavingLocation) {
+        fetch('/update-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                employeeNumber: employeeNumber,
+                clockOutTime: clockOutTime,
+                leavingLatitude: leavingLocation.latitude,
+                leavingLongitude: leavingLocation.longitude
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Successfully updated in the database');
+                alert('Successfully updated in the database');
+            } else {
+                response.text().then(errorMessage => {
+                    console.error('Error updating in the database:', errorMessage);
+                    alert('Error updating in the database: ' + errorMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error:', error);
+        });
+    }
+
+    function getLocation(callback) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(callback);
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
     }
 </script>
 </body>
